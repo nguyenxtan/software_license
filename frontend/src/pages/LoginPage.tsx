@@ -2,7 +2,6 @@ import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -11,8 +10,7 @@ export default function LoginPage() {
 
   const handleLogin = async (values: { username: string; password: string }) => {
     try {
-      const response = await api.post('/auth/login', values);
-      login(response.data.token, response.data.user);
+      await login(values);
       message.success('Đăng nhập thành công!');
       navigate('/dashboard');
     } catch (error: any) {
