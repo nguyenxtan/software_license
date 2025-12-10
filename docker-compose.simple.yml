@@ -10,7 +10,7 @@ services:
     environment:
       # Connect to existing container via host network
       DATABASE_URL: postgresql://license_admin:LicenseDemo@2025@217.217.252.57:5433/software_license?schema=public
-      PORT: 3000
+      PORT: 3001
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:-change_this_in_production}
       JWT_EXPIRES_IN: 7d
@@ -24,8 +24,6 @@ services:
       DEFAULT_REMINDER_DAYS: 90,60,30,7,1
       ENABLE_AUTO_NOTIFICATIONS: ${ENABLE_AUTO_NOTIFICATIONS:-true}
       AUTH_PROVIDER: local
-    ports:
-      - "3001:3000"
     restart: unless-stopped
     network_mode: "host"
 
