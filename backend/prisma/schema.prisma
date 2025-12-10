@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+  VIEWER
+}
+
+enum AuthProvider {
+  LOCAL
+  KEYCLOAK
+}
+
+enum AssetStatus {
+  ACTIVE
+  EXPIRED
+  RENEWED_PENDING
+  DONE
+  CANCELLED
+}
+
+enum ActionType {
+  RENEW
+  CANCEL
+  EXTEND
+  UPDATE_INFO
+}
+
+enum NotificationType {
+  UPCOMING_EXPIRY
+  EXPIRED
+  CUSTOM
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  ACKNOWLEDGED
+  FAILED
+}
+
+enum ImportJobStatus {
+  PROCESSING
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+model User {
+  id                  String              @id @default(uuid())
+  username            String              @unique
+  passwordHash        String?             @map("password_hash")
+  fullName            String              @map("full_name")
+  email               String              @unique
+  departmentId        String?             @map("department_id")
+  role                Role                @default(USER)
+  isActive            Boolean             @default(true) @map("is_active")
+  authProvider        AuthProvider        @default(LOCAL) @map("auth_provider")
+  externalId          String?             @map("external_id")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  lastLoginAt         DateTime?           @map("last_login_at")
+
+  department          Department?         @relation(fields: [departmentId], references: [id])
+  responsibleAssets   SoftwareAsset[]     @relation("ResponsibleUser")
+  renewalHistory      RenewalHistory[]
+  importJobs          ImportJob[]
+
+  @@map("users")
+}
+
+model Department {
+  id                  String              @id @default(uuid())
+  name                String              @unique
+  code                String              @unique
+  emailGroup          String?             @map("email_group")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  users               User[]
+  softwareAssets      SoftwareAsset[]
+
+  @@map("departments")
+}
+
+model SoftwareAsset {
+  id                  String              @id @default(uuid())
+  stt                 Int?
+  name                String
+  costYear            Decimal?            @map("cost_year") @db.Decimal(15, 2)
+  currency            String              @default("VND")
+  budgetYear          Int?                @map("budget_year")
+  departmentId        String?             @map("department_id")
+  expireDate          DateTime            @map("expire_date")
+  note                String?             @db.Text
+  need3MonthReminder  Boolean             @default(true) @map("need_3_month_reminder")
+  status              AssetStatus         @default(ACTIVE)
+  responsibleUserId   String?             @map("responsible_user_id")
+  vendorName          String?             @map("vendor_name")
+  contractNumber      String?             @map("contract_number")
+  licenseType         String?             @map("license_type")
+  quantity            Int?
+  nextExpireDate      DateTime?           @map("next_expire_date")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  department          Department?         @relation(fields: [departmentId], references: [id])
+  responsibleUser     User?               @relation("ResponsibleUser", fields: [responsibleUserId], references: [id])
+  renewalHistory      RenewalHistory[]
+  notifications       Notification[]
+
+  @@map("software_assets")
+}
+
+model RenewalHistory {
+  id                  String              @id @default(uuid())
+  softwareAssetId     String              @map("software_asset_id")
+  actionDate          DateTime            @map("action_date")
+  actionType          ActionType          @map("action_type")
+  oldExpireDate       DateTime?           @map("old_expire_date")
+  newExpireDate       DateTime?           @map("new_expire_date")
+  cost                Decimal?            @db.Decimal(15, 2)
+  performedByUserId   String              @map("performed_by_user_id")
+  note                String?             @db.Text
+  createdAt           DateTime            @default(now()) @map("created_at")
+
+  softwareAsset       SoftwareAsset       @relation(fields: [softwareAssetId], references: [id], onDelete: Cascade)
+  performedBy         User                @relation(fields: [performedByUserId], references: [id])
+
+  @@map("renewal_history")
+}
+
+model Notification {
+  id                  String              @id @default(uuid())
+  softwareAssetId     String              @map("software_asset_id")
+  type                NotificationType
+  remindBeforeDays    Int                 @map("remind_before_days")
+  status              NotificationStatus  @default(PENDING)
+  createdAt           DateTime            @default(now()) @map("created_at")
+  sentAt              DateTime?           @map("sent_at")
+  emailSubject        String?             @map("email_subject")
+  emailTo             String?             @map("email_to")
+  emailCc             String?             @map("email_cc")
+  errorMessage        String?             @map("error_message") @db.Text
+
+  softwareAsset       SoftwareAsset       @relation(fields: [softwareAssetId], references: [id], onDelete: Cascade)
+
+  @@index([softwareAssetId])
+  @@index([status])
+  @@map("notifications")
+}
+
+model ImportJob {
+  id                  String              @id @default(uuid())
+  fileName            String              @map("file_name")
+  uploadedByUserId    String              @map("uploaded_by_user_id")
+  uploadedAt          DateTime            @default(now()) @map("uploaded_at")
+  totalRows           Int                 @map("total_rows")
+  successRows         Int                 @map("success_rows")
+  failedRows          Int                 @map("failed_rows")
+  status              ImportJobStatus
+  errorLog            String?             @map("error_log") @db.Text
+
+  uploadedBy          User                @relation(fields: [uploadedByUserId], references: [id])
+  details             ImportJobDetail[]
+
+  @@map("import_jobs")
+}
+
+model ImportJobDetail {
+  id                  String              @id @default(uuid())
+  importJobId         String              @map("import_job_id")
+  rowNumber           Int                 @map("row_number")
+  rawData             String?             @map("raw_data") @db.Text
+  status              String
+  errorMessage        String?             @map("error_message") @db.Text
+
+  importJob           ImportJob           @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+
+  @@map("import_job_details")
+}
+
+model SystemConfig {
+  id                  String              @id @default(uuid())
+  key                 String              @unique
+  value               String              @db.Text
+  description         String?             @db.Text
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  @@map("system_config")
+}
