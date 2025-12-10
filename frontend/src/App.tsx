@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardPage from './pages/DashboardPage';
 import AssetsPage from './pages/AssetsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function App() {
   return (
@@ -18,7 +19,8 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="assets" element={<AssetsPage />} />
-              {/* TODO: Add more routes */}
+              <Route path="notifications" element={<NotificationsPage />} />
+              {/* TODO: Add Users and Departments routes */}
             </Route>
           </Routes>
         </BrowserRouter>

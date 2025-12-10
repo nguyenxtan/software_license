@@ -1,8 +1,9 @@
 # Frontend Development Progress
 
 **Started:** 2025-12-10
-**Status:** In Progress
-**Session:** 69% used
+**Last Updated:** 2025-12-10 (Session 2)
+**Status:** ~75% Complete
+**Session:** 82% used
 
 ---
 
@@ -23,31 +24,31 @@
 - [x] Delete asset với confirmation
 - [x] Filter by status, sort by date
 
----
-
-## 🔄 In Progress
-
-**Current Task:** Tích hợp Excel upload vào AssetsPage, chuẩn bị commit
-
----
-
-## ⏸️ Pending Features
-
 ### 3. Dashboard với Charts
-- [ ] Pie chart - Phân bổ theo trạng thái
-- [ ] Bar chart - Phân bổ theo phòng ban
-- [ ] Line chart - Thống kê theo thời gian
-- [ ] Recent notifications widget
+- [x] DashboardPage.tsx - Full dashboard với Recharts
+- [x] Pie chart - Phân bổ theo trạng thái
+- [x] Bar chart - Phân bổ theo phòng ban
+- [x] Statistics cards (4 metrics)
+- [x] Recent assets table
 
 ### 4. Notifications Management
-- [ ] NotificationsPage.tsx - Danh sách thông báo
-- [ ] Notification filters & search
-- [ ] Mark as read functionality
+- [x] NotificationsPage.tsx - Danh sách thông báo
+- [x] Notification filters & search (read/unread)
+- [x] Mark as read functionality
+- [x] Mark all as read button
+- [x] Delete notification với confirmation
+- [x] Unread count badge
 
-### 5. Users Management
-- [ ] UsersPage.tsx - Quản lý user
-- [ ] UserFormModal.tsx - Form add/edit user
-- [ ] Role management
+---
+
+---
+
+## 📋 TODO Ngày Mai (Tomorrow's Tasks)
+
+### 5. Users Management (80% done)
+- [x] UsersPage.tsx - **ĐÃ TẠO FILE** (chưa add route)
+- [ ] Add route `/users` vào App.tsx
+- [ ] Test CRUD users functionality
 
 ### 6. Departments Management
 - [ ] DepartmentsPage.tsx - Quản lý phòng ban
@@ -75,4 +76,15 @@
 
 ---
 
-**Next Action:** Continue building Notifications, Users, Departments pages
+## 🎯 Kế Hoạch Ngày Mai (Tomorrow's Plan)
+
+1. **Add route cho UsersPage** - File đã tạo sẵn, chỉ cần thêm vào App.tsx
+2. **Build DepartmentsPage** - Tương tự UsersPage, CRUD đơn giản
+3. **Add Excel download template** - Button download template.xlsx
+4. **Test tất cả pages** - Đảm bảo không có lỗi TypeScript
+5. **Build & Deploy** - Chạy build script, deploy lên VPS
+6. **Full system test** - Test toàn bộ trên production
+
+---
+
+**Next Action:** Add UsersPage route và build DepartmentsPage
