@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  # Frontend builder - Build static files
+  frontend-builder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: software_license_frontend_builder
+    volumes:
+      - ./frontend/dist:/app/dist
+    command: sh -c "npm ci && npm run build && echo 'Build completed! Files in ./frontend/dist'"
+
+  # Frontend web server (optional - nếu không dùng aaPanel)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: software_license_web
+    network_mode: "host"
+    restart: unless-stopped
+    environment:
+      - NGINX_PORT=5173
