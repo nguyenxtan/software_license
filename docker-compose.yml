@@ -1,27 +1,6 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: software_license_db
-    environment:
-      POSTGRES_USER: license_admin
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-LicenseDemo@2025}
-      POSTGRES_DB: software_license
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U license_admin -d software_license"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - app_network
-
   # Backend API
   backend:
     build:
@@ -29,8 +8,8 @@ services:
       dockerfile: Dockerfile
     container_name: software_license_api
     environment:
-      DATABASE_URL: postgresql://license_admin:${DB_PASSWORD:-LicenseDemo@2025}@postgres:5432/software_license?schema=public
-      PORT: 3000
+      DATABASE_URL: postgresql://license_admin:${DB_PASSWORD:-LicenseDemo@2025}@${DB_HOST:-217.217.252.57}:${DB_PORT:-5433}/software_license?schema=public
+      PORT: 3001
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:-change_this_in_production}
       JWT_EXPIRES_IN: 7d
@@ -40,35 +19,9 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       EMAIL_FROM: ${EMAIL_FROM:-Hệ thống quản lý <noreply@company.com>}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-https://license.snpdemo.com}
       DEFAULT_REMINDER_DAYS: 90,60,30,7,1
       ENABLE_AUTO_NOTIFICATIONS: ${ENABLE_AUTO_NOTIFICATIONS:-true}
       AUTH_PROVIDER: local
-    ports:
-      - "3001:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - app_network
-
-  # Frontend (Optional - nếu muốn serve static files)
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: software_license_web
-  #   ports:
-  #     - "5173:80"
-  #   restart: unless-stopped
-  #   networks:
-  #     - app_network
-
-volumes:
-  postgres_data:
-    driver: local
-
-networks:
-  app_network:
-    driver: bridge
+    network_mode: "host"

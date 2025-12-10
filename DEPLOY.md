@@ -1,317 +1,223 @@
-# Hướng dẫn Deploy lên VPS
+# Production Deployment Guide
 
-## 📋 Yêu cầu
-- VPS có Docker & Docker Compose
-- Port mở: 5433 (PostgreSQL), 3001 (Backend API), 5173 (Frontend)
-- Git
+## 📋 System Requirements
+
+- VPS with Docker installed
+- PostgreSQL database (existing or new)
+- Domain with DNS access
+- Web server (Nginx/aaPanel) for SSL and static files
 
 ---
 
-## 🚀 Deploy bằng Docker Compose (Khuyến nghị)
+## 🚀 Quick Deploy
 
-### Bước 1: Chuẩn bị VPS
-
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install Docker (nếu chưa có)
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# Install Docker Compose
-sudo apt install docker-compose -y
-
-# Verify
-docker --version
-docker-compose --version
-```
-
-### Bước 2: Clone project
+### 1. Clone Repository
 
 ```bash
-# Clone từ GitHub (hoặc upload code lên VPS)
 cd /opt
-sudo git clone https://github.com/your-repo/software-license-system.git
-cd software-license-system
-
-# Hoặc upload bằng rsync
-# rsync -avz --exclude 'node_modules' ./ user@vps:/opt/software-license-system/
+git clone https://github.com/nguyenxtan/software_license.git
+cd software_license
 ```
 
-### Bước 3: Cấu hình environment
+### 2. Configure Environment
 
 ```bash
-# Copy file env
-cp .env.production .env
-
-# Chỉnh sửa
+cp .env.example .env
 nano .env
 ```
 
-**Cập nhật các giá trị:**
+Set your values:
 ```env
-DB_PASSWORD=your_secure_password
-JWT_SECRET=your_random_secret_string
+DB_HOST=your-db-host
+DB_PORT=5432
+DB_PASSWORD=your-secure-password
+JWT_SECRET=your-random-string
 SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-FRONTEND_URL=http://your-vps-ip:5173
+SMTP_PASS=your-gmail-app-password
+FRONTEND_URL=https://your-domain.com
 ```
 
-### Bước 4: Start services
+### 3. Deploy Backend
 
 ```bash
-# Start all services
-docker-compose up -d
-
-# Xem logs
-docker-compose logs -f
-
-# Kiểm tra status
-docker-compose ps
+docker-compose up -d --build
 ```
 
-### Bước 5: Init database (chỉ lần đầu)
+### 4. Initialize Database
 
 ```bash
-# Vào backend container
-docker exec -it software_license_api sh
+# Run migrations
+docker exec -it software_license_api npx prisma migrate deploy
 
-# Chạy migrations
-npx prisma migrate deploy
-
-# Seed data mẫu (optional)
-node prisma/seed.js
-
-# Exit
-exit
+# Seed sample data (optional)
+docker exec -it software_license_api node prisma/seed.js
 ```
 
-### Bước 6: Truy cập
-
-- **Backend API**: http://your-vps-ip:3001
-- **Health check**: http://your-vps-ip:3001/health
-- **Frontend**: Chạy riêng (xem phần dưới)
-
-**Login mặc định:**
-- Username: `admin`
-- Password: `123456`
-
----
-
-## 🔧 Deploy thủ công (Không dùng Docker Compose)
-
-### Backend
-
-```bash
-# 1. Tạo PostgreSQL container
-docker run -d \
-  --name software_license_db \
-  -e POSTGRES_USER=license_admin \
-  -e POSTGRES_PASSWORD=your_password \
-  -e POSTGRES_DB=software_license \
-  -p 5433:5432 \
-  -v software_license_data:/var/lib/postgresql/data \
-  --restart unless-stopped \
-  postgres:15-alpine
-
-# 2. Setup backend
-cd backend
-npm install
-
-# 3. Tạo file .env
-cat > .env << EOF
-DATABASE_URL="postgresql://license_admin:your_password@localhost:5433/software_license?schema=public"
-PORT=3001
-NODE_ENV=production
-JWT_SECRET=your_secret
-# ... thêm các biến khác
-EOF
-
-# 4. Run migrations
-npx prisma generate
-npx prisma migrate deploy
-node prisma/seed.js
-
-# 5. Start backend với PM2
-npm install -g pm2
-pm2 start src/index.js --name software-license-api
-pm2 save
-pm2 startup
-```
-
-### Frontend
+### 5. Build Frontend
 
 ```bash
 cd frontend
+cp .env.example .env
+nano .env  # Set VITE_API_URL=https://your-domain.com/api
 
-# Build production
-npm install
-npm run build
-
-# Serve với Nginx hoặc serve package
-npm install -g serve
-pm2 start "serve -s dist -l 5173" --name software-license-web
-pm2 save
+cd ..
+./build-frontend.sh
 ```
 
 ---
 
-## 🔒 Cấu hình Nginx (Optional - để dùng domain)
+## 📖 Detailed Configuration
 
+### Backend Setup
+
+Backend runs on port 3001 in Docker container.
+
+**Check Status:**
+```bash
+docker ps
+docker logs -f software_license_api
+curl http://localhost:3001/health
+```
+
+### Frontend Setup
+
+Frontend is built as static files and served via Nginx/aaPanel.
+
+**Configure Nginx:**
 ```nginx
-# /etc/nginx/sites-available/software-license
+location / {
+    root /www/wwwroot/your-domain.com;
+    try_files $uri $uri/ /index.html;
+}
 
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    # Frontend
-    location / {
-        proxy_pass http://localhost:5173;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Backend API
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
+location /api {
+    proxy_pass http://127.0.0.1:3001;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
 
+### SSL Certificate
+
+Using Let's Encrypt:
 ```bash
-# Enable site
-sudo ln -s /etc/nginx/sites-available/software-license /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
+apt install certbot python3-certbot-nginx
+certbot --nginx -d your-domain.com
 ```
+
+Or configure via aaPanel → SSL → Let's Encrypt.
 
 ---
 
-## 📦 Backup & Restore
-
-### Backup Database
+## 🔄 Update Application
 
 ```bash
-# Backup toàn bộ database
-docker exec software_license_db pg_dump -U license_admin software_license > backup_$(date +%Y%m%d).sql
-
-# Hoặc backup container
-docker commit software_license_db license_db_backup
-docker save license_db_backup > license_db_backup.tar
-```
-
-### Restore Database
-
-```bash
-# Restore từ SQL file
-docker exec -i software_license_db psql -U license_admin software_license < backup_20250110.sql
-
-# Hoặc restore container
-docker load < license_db_backup.tar
-docker run -d --name software_license_db ... license_db_backup
-```
-
----
-
-## 🔄 Update Code
-
-```bash
-# Pull code mới
-cd /opt/software-license-system
+cd /opt/software_license
 git pull
-
-# Rebuild và restart
 docker-compose down
 docker-compose up -d --build
-
-# Chạy migration nếu có thay đổi schema
 docker exec -it software_license_api npx prisma migrate deploy
+./build-frontend.sh
+```
+
+---
+
+## 💾 Backup
+
+### Database Backup
+
+```bash
+# Backup
+docker exec software_license_db pg_dump -U license_admin software_license > backup_$(date +%Y%m%d).sql
+
+# Restore
+docker exec -i software_license_db psql -U license_admin software_license < backup.sql
+```
+
+### Automated Backup
+
+Add to crontab:
+```bash
+0 2 * * * docker exec software_license_db pg_dump -U license_admin software_license > /backup/license_$(date +\%Y\%m\%d).sql
 ```
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Backend không start được
+### Backend Connection Issues
 
 ```bash
-# Xem logs
+# Check logs
 docker logs software_license_api
 
-# Kiểm tra database connection
-docker exec -it software_license_db psql -U license_admin -d software_license -c "SELECT 1;"
+# Verify database connection
+docker exec -it software_license_api npx prisma db pull
+
+# Check environment
+docker exec software_license_api env | grep DATABASE_URL
 ```
 
-### Port đã bị sử dụng
+### Frontend Not Loading
 
 ```bash
-# Kiểm tra port
-sudo lsof -i :3001
-sudo lsof -i :5433
+# Check files exist
+ls -la /www/wwwroot/your-domain.com/
 
-# Đổi port trong docker-compose.yml hoặc .env
+# Verify API connection
+curl https://your-domain.com/api/health
+
+# Check Nginx config
+nginx -t
 ```
 
-### Migration lỗi
+### Port Conflicts
 
 ```bash
-# Reset migrations (CHỈ dùng khi development!)
-docker exec -it software_license_api npx prisma migrate reset
+# Check what's using port 3001
+lsof -i :3001
 
-# Production: Xem log chi tiết
-docker exec -it software_license_api npx prisma migrate deploy --schema=./prisma/schema.prisma
-```
-
----
-
-## 📊 Monitoring
-
-```bash
-# Xem logs realtime
-docker-compose logs -f
-
-# Chỉ xem backend logs
-docker logs -f software_license_api
-
-# Chỉ xem database logs
-docker logs -f software_license_db
-
-# Kiểm tra resource usage
-docker stats
+# Change port in docker-compose.yml if needed
 ```
 
 ---
 
 ## 🔐 Security Checklist
 
-- [ ] Đổi password database mặc định
-- [ ] Đổi JWT_SECRET
-- [ ] Đổi password user admin
-- [ ] Setup firewall (chỉ mở port cần thiết)
-- [ ] Cấu hình SSL/TLS (Let's Encrypt)
-- [ ] Backup tự động hàng ngày
-- [ ] Update Docker images thường xuyên
+- [ ] Change JWT_SECRET to random secure string
+- [ ] Use strong database password
+- [ ] Enable SSL/HTTPS
+- [ ] Change admin password after first login (admin/123456)
+- [ ] Setup firewall (allow only 22, 80, 443, 3001)
+- [ ] Regular backups
+- [ ] Keep Docker images updated
 
 ---
 
-## 📞 Support
+## 📊 Monitoring
 
-Nếu gặp vấn đề, kiểm tra:
-1. Logs: `docker-compose logs`
-2. Database connection: `docker exec -it software_license_db psql -U license_admin`
-3. Health check: `curl http://localhost:3001/health`
-4. Environment variables: `docker exec software_license_api env`
+```bash
+# Container status
+docker ps
+
+# Logs
+docker logs -f software_license_api
+
+# Resource usage
+docker stats
+```
 
 ---
 
-Chúc bạn deploy thành công! 🚀
+## 📞 Default Credentials
+
+- **Username:** admin
+- **Password:** 123456
+
+⚠️ **Change immediately after first login**
+
+---
+
+For client handover instructions, see [HANDOVER.md](HANDOVER.md)
