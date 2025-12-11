@@ -7,6 +7,8 @@ import DashboardLayout from './components/DashboardLayout';
 import DashboardPage from './pages/DashboardPage';
 import AssetsPage from './pages/AssetsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import UsersPage from './pages/UsersPage';
+import DepartmentsPage from './pages/DepartmentsPage';
 
 function App() {
   return (
@@ -20,7 +22,8 @@ function App() {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="assets" element={<AssetsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
-              {/* TODO: Add Users and Departments routes */}
+              <Route path="users" element={<UsersPage />} />
+              <Route path="departments" element={<DepartmentsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

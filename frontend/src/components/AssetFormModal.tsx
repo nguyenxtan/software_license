@@ -22,7 +22,6 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
         form.setFieldsValue({
           ...asset,
           expireDate: dayjs(asset.expireDate),
-          purchaseDate: asset.purchaseDate ? dayjs(asset.purchaseDate) : null,
         });
       } else {
         form.resetFields();
@@ -45,7 +44,6 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
       const data = {
         ...values,
         expireDate: values.expireDate.toISOString(),
-        purchaseDate: values.purchaseDate?.toISOString(),
       };
 
       if (asset) {
@@ -89,7 +87,7 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
           <Input placeholder="v1.0.0" />
         </Form.Item>
 
-        <Form.Item name="vendor" label="Nhà cung cấp">
+        <Form.Item name="vendorName" label="Nhà cung cấp">
           <Input placeholder="Tên nhà cung cấp" />
         </Form.Item>
 
@@ -122,10 +120,6 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
 
         <Form.Item name="assignedTo" label="Người/Bộ phận sử dụng">
           <Input placeholder="Tên người hoặc bộ phận" />
-        </Form.Item>
-
-        <Form.Item name="purchaseDate" label="Ngày mua">
-          <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
         </Form.Item>
 
         <Form.Item

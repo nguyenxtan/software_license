@@ -92,7 +92,7 @@ export default function AssetsPage() {
       filteredValue: searchText ? [searchText] : null,
       onFilter: (value, record) =>
         record.name.toLowerCase().includes(value.toString().toLowerCase()) ||
-        record.vendor?.toLowerCase().includes(value.toString().toLowerCase()),
+        (record.vendorName?.toLowerCase().includes(value.toString().toLowerCase()) ?? false),
     },
     {
       title: 'Phiên bản',
