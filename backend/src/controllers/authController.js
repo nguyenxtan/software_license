@@ -57,14 +57,19 @@ const getMe = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      include: { department: true },
       select: {
         id: true,
         username: true,
         fullName: true,
         email: true,
         role: true,
-        department: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         isActive: true,
         lastLoginAt: true,
       },
