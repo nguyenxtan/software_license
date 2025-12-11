@@ -1,5 +1,6 @@
 const prisma = require('../config/database');
 const emailService = require('../services/emailService');
+const schedulerService = require('../services/schedulerService');
 
 const getNotifications = async (req, res) => {
   try {
@@ -79,7 +80,23 @@ const resendNotification = async (req, res) => {
   }
 };
 
+const testScheduler = async (req, res) => {
+  try {
+    console.log('Manual scheduler test triggered by user:', req.user.id);
+    const results = await schedulerService.checkAndSendReminders();
+
+    res.json({
+      message: 'Test hoàn tất',
+      results,
+    });
+  } catch (error) {
+    console.error('Test scheduler error:', error);
+    res.status(500).json({ error: 'Test scheduler thất bại', details: error.message });
+  }
+};
+
 module.exports = {
   getNotifications,
   resendNotification,
+  testScheduler,
 };
