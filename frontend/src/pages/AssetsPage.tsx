@@ -28,8 +28,8 @@ export default function AssetsPage() {
   const fetchAssets = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/assets');
-      setAssets(response.data);
+      const response = await api.get('/software-assets');
+      setAssets(response.data.data || response.data);
     } catch (error: any) {
       message.error('Không thể tải danh sách phần mềm');
     } finally {
@@ -39,7 +39,7 @@ export default function AssetsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await api.get('/dashboard/stats');
+      const response = await api.get('/dashboard/summary');
       setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch stats');
@@ -48,7 +48,7 @@ export default function AssetsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/assets/${id}`);
+      await api.delete(`/software-assets/${id}`);
       message.success('Đã xóa phần mềm');
       fetchAssets();
       fetchStats();
@@ -101,8 +101,8 @@ export default function AssetsPage() {
     },
     {
       title: 'Nhà cung cấp',
-      dataIndex: 'vendor',
-      key: 'vendor',
+      dataIndex: 'vendorName',
+      key: 'vendorName',
     },
     {
       title: 'Phòng ban',

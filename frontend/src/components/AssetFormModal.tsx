@@ -47,10 +47,10 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
       };
 
       if (asset) {
-        await api.put(`/assets/${asset.id}`, data);
+        await api.put(`/software-assets/${asset.id}`, data);
         message.success('Cập nhật phần mềm thành công');
       } else {
-        await api.post('/assets', data);
+        await api.post('/software-assets', data);
         message.success('Thêm phần mềm thành công');
       }
       onClose();

@@ -25,12 +25,12 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       // Fetch stats
-      const statsRes = await api.get('/dashboard/stats');
+      const statsRes = await api.get('/dashboard/summary');
       setStats(statsRes.data);
 
       // Fetch recent/expiring assets
-      const assetsRes = await api.get('/assets?limit=5');
-      setRecentAssets(assetsRes.data.slice(0, 5));
+      const assetsRes = await api.get('/software-assets?limit=5');
+      setRecentAssets(assetsRes.data.data || assetsRes.data.slice(0, 5));
 
       // Fetch department stats
       const deptsRes = await api.get('/departments');
