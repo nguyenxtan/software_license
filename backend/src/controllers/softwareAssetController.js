@@ -132,12 +132,27 @@ const createSoftwareAsset = async (req, res) => {
       return res.status(400).json({ error: 'Tên phần mềm và thời hạn là bắt buộc' });
     }
 
+    // Whitelist only valid fields that exist in schema
+    const validData = {
+      name: data.name,
+      costYear: data.costYear,
+      departmentId: data.departmentId,
+      expireDate: new Date(data.expireDate),
+      note: data.notes || data.note, // Frontend sends 'notes', DB has 'note'
+      need3MonthReminder: data.need3MonthReminder !== undefined ? data.need3MonthReminder : true,
+      status: data.status,
+      vendorName: data.vendorName,
+      licenseType: data.licenseType,
+      nextExpireDate: data.nextExpireDate ? new Date(data.nextExpireDate) : null,
+    };
+
+    // Remove undefined values
+    Object.keys(validData).forEach(key =>
+      validData[key] === undefined && delete validData[key]
+    );
+
     const asset = await prisma.softwareAsset.create({
-      data: {
-        ...data,
-        expireDate: new Date(data.expireDate),
-        nextExpireDate: data.nextExpireDate ? new Date(data.nextExpireDate) : null,
-      },
+      data: validData,
       include: {
         department: true,
         responsibleUser: {
@@ -171,13 +186,22 @@ const updateSoftwareAsset = async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy phần mềm' });
     }
 
+    // Whitelist only valid fields that exist in schema
+    const validData = {};
+    if (data.name !== undefined) validData.name = data.name;
+    if (data.costYear !== undefined) validData.costYear = data.costYear;
+    if (data.departmentId !== undefined) validData.departmentId = data.departmentId;
+    if (data.expireDate !== undefined) validData.expireDate = new Date(data.expireDate);
+    if (data.notes !== undefined || data.note !== undefined) validData.note = data.notes || data.note;
+    if (data.need3MonthReminder !== undefined) validData.need3MonthReminder = data.need3MonthReminder;
+    if (data.status !== undefined) validData.status = data.status;
+    if (data.vendorName !== undefined) validData.vendorName = data.vendorName;
+    if (data.licenseType !== undefined) validData.licenseType = data.licenseType;
+    if (data.nextExpireDate !== undefined) validData.nextExpireDate = data.nextExpireDate ? new Date(data.nextExpireDate) : null;
+
     const asset = await prisma.softwareAsset.update({
       where: { id },
-      data: {
-        ...data,
-        expireDate: data.expireDate ? new Date(data.expireDate) : undefined,
-        nextExpireDate: data.nextExpireDate ? new Date(data.nextExpireDate) : undefined,
-      },
+      data: validData,
       include: {
         department: true,
         responsibleUser: {
