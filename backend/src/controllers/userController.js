@@ -29,9 +29,6 @@ const getUsers = async (req, res) => {
         skip,
         take: parseInt(limit),
         orderBy: { createdAt: 'desc' },
-        include: {
-          department: true,
-        },
         select: {
           id: true,
           username: true,
@@ -39,7 +36,13 @@ const getUsers = async (req, res) => {
           email: true,
           role: true,
           isActive: true,
-          department: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
           createdAt: true,
           lastLoginAt: true,
         },
@@ -68,9 +71,6 @@ const getUser = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { id },
-      include: {
-        department: true,
-      },
       select: {
         id: true,
         username: true,
@@ -78,7 +78,13 @@ const getUser = async (req, res) => {
         email: true,
         role: true,
         isActive: true,
-        department: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
         lastLoginAt: true,
@@ -118,9 +124,6 @@ const createUser = async (req, res) => {
         departmentId: departmentId || null,
         authProvider: 'LOCAL',
       },
-      include: {
-        department: true,
-      },
       select: {
         id: true,
         username: true,
@@ -128,7 +131,13 @@ const createUser = async (req, res) => {
         email: true,
         role: true,
         isActive: true,
-        department: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         createdAt: true,
       },
     });
@@ -164,9 +173,6 @@ const updateUser = async (req, res) => {
     const user = await prisma.user.update({
       where: { id },
       data: updateData,
-      include: {
-        department: true,
-      },
       select: {
         id: true,
         username: true,
@@ -174,7 +180,13 @@ const updateUser = async (req, res) => {
         email: true,
         role: true,
         isActive: true,
-        department: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         updatedAt: true,
       },
     });
