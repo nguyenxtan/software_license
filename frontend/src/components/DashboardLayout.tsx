@@ -31,22 +31,22 @@ export default function DashboardLayout() {
     {
       key: '/assets',
       icon: <AppstoreOutlined />,
-      label: 'Qu\u1ea3n l\u00fd ph\u1ea7n m\u1ec1m',
+      label: 'Quản lý phần mềm',
     },
     {
       key: '/notifications',
       icon: <BellOutlined />,
-      label: 'Th\u00f4ng b\u00e1o',
+      label: 'Thông báo',
     },
     {
       key: '/users',
       icon: <UserOutlined />,
-      label: 'Ng\u01b0\u1eddi d\u00f9ng',
+      label: 'Người dùng',
     },
     {
       key: '/departments',
       icon: <TeamOutlined />,
-      label: 'Ph\u00f2ng ban',
+      label: 'Phòng ban',
     },
   ];
 
@@ -79,7 +79,7 @@ export default function DashboardLayout() {
               {
                 key: 'logout',
                 icon: <LogoutOutlined />,
-                label: '\u0110\u0103ng xu\u1ea5t',
+                label: 'Đăng xuất',
                 onClick: handleLogout,
               },
             ]}
@@ -89,9 +89,9 @@ export default function DashboardLayout() {
 
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0 }}>H\u1ec7 th\u1ed1ng Qu\u1ea3n l\u00fd B\u1ea3n quy\u1ec1n Ph\u1ea7n m\u1ec1m</h2>
+          <h2 style={{ margin: 0 }}>Hệ thống Quản lý Bản quyền Phần mềm</h2>
           <div>
-            Ch\u00e0o, <strong>{user?.fullName || user?.username}</strong> ({user?.role})
+            Chào, <strong>{user?.fullName || user?.username}</strong> ({user?.role})
           </div>
         </Header>
 
