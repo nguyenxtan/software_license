@@ -144,6 +144,14 @@ const createSoftwareAsset = async (req, res) => {
       vendorName: data.vendorName,
       licenseType: data.licenseType,
       nextExpireDate: data.nextExpireDate ? new Date(data.nextExpireDate) : null,
+
+      // Notification configuration
+      notificationEnabled: data.notificationEnabled !== undefined ? data.notificationEnabled : true,
+      notificationFrequency: data.notificationFrequency || 'MILESTONES',
+      notificationStartDays: data.notificationStartDays || 90,
+      notificationChannels: data.notificationChannels || 'EMAIL',
+      notificationWebhookUrl: data.notificationWebhookUrl,
+      notificationCustomSchedule: data.notificationCustomSchedule,
     };
 
     // Remove undefined values
@@ -198,6 +206,14 @@ const updateSoftwareAsset = async (req, res) => {
     if (data.vendorName !== undefined) validData.vendorName = data.vendorName;
     if (data.licenseType !== undefined) validData.licenseType = data.licenseType;
     if (data.nextExpireDate !== undefined) validData.nextExpireDate = data.nextExpireDate ? new Date(data.nextExpireDate) : null;
+
+    // Notification configuration
+    if (data.notificationEnabled !== undefined) validData.notificationEnabled = data.notificationEnabled;
+    if (data.notificationFrequency !== undefined) validData.notificationFrequency = data.notificationFrequency;
+    if (data.notificationStartDays !== undefined) validData.notificationStartDays = data.notificationStartDays;
+    if (data.notificationChannels !== undefined) validData.notificationChannels = data.notificationChannels;
+    if (data.notificationWebhookUrl !== undefined) validData.notificationWebhookUrl = data.notificationWebhookUrl;
+    if (data.notificationCustomSchedule !== undefined) validData.notificationCustomSchedule = data.notificationCustomSchedule;
 
     const asset = await prisma.softwareAsset.update({
       where: { id },

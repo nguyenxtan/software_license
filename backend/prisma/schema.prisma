@@ -95,25 +95,35 @@ model Department {
 }
 
 model SoftwareAsset {
-  id                  String              @id @default(uuid())
-  stt                 Int?
-  name                String
-  costYear            Decimal?            @map("cost_year") @db.Decimal(15, 2)
-  currency            String              @default("VND")
-  budgetYear          Int?                @map("budget_year")
-  departmentId        String?             @map("department_id")
-  expireDate          DateTime            @map("expire_date")
-  note                String?             @db.Text
-  need3MonthReminder  Boolean             @default(true) @map("need_3_month_reminder")
-  status              AssetStatus         @default(ACTIVE)
-  responsibleUserId   String?             @map("responsible_user_id")
-  vendorName          String?             @map("vendor_name")
-  contractNumber      String?             @map("contract_number")
-  licenseType         String?             @map("license_type")
-  quantity            Int?
-  nextExpireDate      DateTime?           @map("next_expire_date")
-  createdAt           DateTime            @default(now()) @map("created_at")
-  updatedAt           DateTime            @updatedAt @map("updated_at")
+  id                        String              @id @default(uuid())
+  stt                       Int?
+  name                      String
+  costYear                  Decimal?            @map("cost_year") @db.Decimal(15, 2)
+  currency                  String              @default("VND")
+  budgetYear                Int?                @map("budget_year")
+  departmentId              String?             @map("department_id")
+  expireDate                DateTime            @map("expire_date")
+  note                      String?             @db.Text
+  need3MonthReminder        Boolean             @default(true) @map("need_3_month_reminder")
+  status                    AssetStatus         @default(ACTIVE)
+  responsibleUserId         String?             @map("responsible_user_id")
+  vendorName                String?             @map("vendor_name")
+  contractNumber            String?             @map("contract_number")
+  licenseType               String?             @map("license_type")
+  quantity                  Int?
+  nextExpireDate            DateTime?           @map("next_expire_date")
+
+  // Notification Configuration
+  notificationEnabled       Boolean             @default(true) @map("notification_enabled")
+  notificationFrequency     String              @default("MILESTONES") @map("notification_frequency") // DAILY, WEEKLY, MILESTONES, CUSTOM
+  notificationStartDays     Int                 @default(90) @map("notification_start_days")
+  notificationChannels      String              @default("EMAIL") @map("notification_channels") // Comma-separated: EMAIL,WEBHOOK,TELEGRAM
+  notificationWebhookUrl    String?             @map("notification_webhook_url")
+  notificationCustomSchedule String?            @map("notification_custom_schedule") // Cron format
+  lastNotificationSentAt    DateTime?           @map("last_notification_sent_at")
+
+  createdAt                 DateTime            @default(now()) @map("created_at")
+  updatedAt                 DateTime            @updatedAt @map("updated_at")
 
   department          Department?         @relation(fields: [departmentId], references: [id])
   responsibleUser     User?               @relation("ResponsibleUser", fields: [responsibleUserId], references: [id])

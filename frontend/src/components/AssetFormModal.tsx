@@ -22,6 +22,10 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
         form.setFieldsValue({
           ...asset,
           expireDate: dayjs(asset.expireDate),
+          // Convert comma-separated string to array for Checkbox.Group
+          notificationChannels: asset.notificationChannels
+            ? asset.notificationChannels.split(',').map((c: string) => c.trim())
+            : ['EMAIL'],
         });
       } else {
         form.resetFields();
@@ -44,6 +48,10 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
       const data = {
         ...values,
         expireDate: values.expireDate.toISOString(),
+        // Convert notificationChannels array to comma-separated string
+        notificationChannels: Array.isArray(values.notificationChannels)
+          ? values.notificationChannels.join(',')
+          : values.notificationChannels || 'EMAIL',
       };
 
       if (asset) {
@@ -148,21 +156,35 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
         </Form.Item>
 
         <Form.Item label="Cấu hình thông báo">
-          <Form.Item name="need3MonthReminder" valuePropName="checked" noStyle>
-            <Checkbox>Nhắc trước 90 ngày</Checkbox>
+          <Form.Item name="notificationEnabled" valuePropName="checked" noStyle initialValue={true}>
+            <Checkbox>Bật thông báo</Checkbox>
           </Form.Item>
-          <Form.Item name="need2MonthReminder" valuePropName="checked" noStyle>
-            <Checkbox>Nhắc trước 60 ngày</Checkbox>
-          </Form.Item>
-          <Form.Item name="need1MonthReminder" valuePropName="checked" noStyle>
-            <Checkbox>Nhắc trước 30 ngày</Checkbox>
-          </Form.Item>
-          <Form.Item name="need1WeekReminder" valuePropName="checked" noStyle>
-            <Checkbox>Nhắc trước 7 ngày</Checkbox>
-          </Form.Item>
-          <Form.Item name="need1DayReminder" valuePropName="checked" noStyle>
-            <Checkbox>Nhắc trước 1 ngày</Checkbox>
-          </Form.Item>
+        </Form.Item>
+
+        <Form.Item name="notificationFrequency" label="Tần suất thông báo" initialValue="MILESTONES">
+          <Select placeholder="Chọn tần suất">
+            <Select.Option value="MILESTONES">Chỉ ở các mốc (90/60/30/7/1 ngày)</Select.Option>
+            <Select.Option value="DAILY">Hằng ngày</Select.Option>
+            <Select.Option value="WEEKLY">Hằng tuần (Thứ 2)</Select.Option>
+            <Select.Option value="CUSTOM">Tùy chỉnh (Cron)</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="notificationStartDays" label="Bắt đầu nhắc trước (ngày)" initialValue={90}>
+          <InputNumber min={1} max={365} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item name="notificationChannels" label="Kênh thông báo" initialValue="EMAIL">
+          <Checkbox.Group>
+            <Checkbox value="EMAIL">Email</Checkbox>
+            <Checkbox value="WEBHOOK">Webhook (N8N)</Checkbox>
+            <Checkbox value="TELEGRAM">Telegram</Checkbox>
+            <Checkbox value="ZALO">Zalo OA</Checkbox>
+          </Checkbox.Group>
+        </Form.Item>
+
+        <Form.Item name="notificationWebhookUrl" label="Webhook URL">
+          <Input placeholder="https://n8n-prod.iconiclogs.com/webhook/noti_license" />
         </Form.Item>
 
         <Form.Item name="notes" label="Ghi chú">
