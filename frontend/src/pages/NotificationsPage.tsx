@@ -28,7 +28,7 @@ export default function NotificationsPage() {
     setLoading(true);
     try {
       const response = await api.get('/notifications');
-      setNotifications(response.data);
+      setNotifications(response.data.data || response.data);
     } catch (error) {
       message.error('Không thể tải danh sách thông báo');
     } finally {

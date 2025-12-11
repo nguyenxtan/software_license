@@ -41,7 +41,7 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const response = await api.get('/users');
-      setUsers(response.data);
+      setUsers(response.data.data || response.data);
     } catch (error) {
       message.error('Không thể tải danh sách người dùng');
     } finally {
