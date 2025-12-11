@@ -9,6 +9,7 @@ const getSummary = async (req, res) => {
     // Get counts
     const [
       totalAssets,
+      activeAssets,
       expiringSoon,
       expired,
       renewedThisMonth,
@@ -16,12 +17,13 @@ const getSummary = async (req, res) => {
       assetsByDepartment,
       expiringByMonth,
     ] = await Promise.all([
-      // Total active assets
+      // Total all assets
+      prisma.softwareAsset.count(),
+
+      // Active assets only
       prisma.softwareAsset.count({
         where: {
-          status: {
-            in: ['ACTIVE', 'RENEWED_PENDING'],
-          },
+          status: 'ACTIVE',
         },
       }),
 
@@ -144,12 +146,11 @@ const getSummary = async (req, res) => {
     });
 
     res.json({
-      summary: {
-        totalAssets,
-        expiringSoon,
-        expired,
-        renewedThisMonth,
-      },
+      total: totalAssets,
+      active: activeAssets,
+      expiring: expiringSoon,
+      expired: expired,
+      renewedThisMonth: renewedThisMonth,
       assetsByStatus: assetsByStatus.map(item => ({
         status: item.status,
         count: item._count,
