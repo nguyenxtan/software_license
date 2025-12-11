@@ -49,6 +49,15 @@ export interface SoftwareAsset {
   createdAt: string;
   updatedAt: string;
   renewalHistory?: RenewalHistory[];
+
+  // Notification configuration
+  notificationEnabled?: boolean;
+  notificationFrequency?: string;
+  notificationStartDays?: number;
+  notificationChannels?: string;
+  notificationWebhookUrl?: string;
+  notificationCustomSchedule?: string;
+  lastNotificationSentAt?: string;
 }
 
 export interface RenewalHistory {
