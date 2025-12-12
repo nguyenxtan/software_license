@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Table, Card, Button, Tag, Space, message, Modal, Select, Input } from 'antd';
-import { DeleteOutlined, CheckOutlined, BellOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Card, Button, Tag, Space, message, Select, Input } from 'antd';
+import { BellOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import api from '../services/api';
 import type { Notification as NotificationType } from '../types';
