@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Table, Card, Button, Tag, Space, message, Modal, Select, Input } from 'antd';
-import { DeleteOutlined, CheckOutlined, BellOutlined } from '@ant-design/icons';
+import { DeleteOutlined, CheckOutlined, BellOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import api from '../services/api';
+import type { Notification as NotificationType } from '../types';
 
-interface Notification {
-  id: string;
-  assetId: string;
-  assetName: string;
-  message: string;
-  notificationType: 'EMAIL' | 'SYSTEM' | 'SMS';
-  isRead: boolean;
-  createdAt: string;
-}
+type Notification = NotificationType;
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -36,42 +29,13 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAsRead = async (id: string) => {
+  const handleResend = async (id: string) => {
     try {
-      await api.patch(`/notifications/${id}/read`);
-      message.success('Đã đánh dấu là đã đọc');
+      await api.post(`/notifications/${id}/resend`);
+      message.success('Đã gửi lại thông báo');
       fetchNotifications();
     } catch (error) {
-      message.error('Không thể cập nhật trạng thái');
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa thông báo này?',
-      okText: 'Xóa',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await api.delete(`/notifications/${id}`);
-          message.success('Đã xóa thông báo');
-          fetchNotifications();
-        } catch (error) {
-          message.error('Không thể xóa thông báo');
-        }
-      },
-    });
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await api.post('/notifications/mark-all-read');
-      message.success('Đã đánh dấu tất cả là đã đọc');
-      fetchNotifications();
-    } catch (error) {
-      message.error('Không thể cập nhật');
+      message.error('Không thể gửi lại thông báo');
     }
   };
 
@@ -87,40 +51,63 @@ export default function NotificationsPage() {
     },
     {
       title: 'Phần mềm',
-      dataIndex: 'assetName',
       key: 'assetName',
       width: 200,
+      render: (_, record) => record.softwareAsset?.name || '-',
     },
     {
       title: 'Nội dung',
-      dataIndex: 'message',
-      key: 'message',
+      dataIndex: 'emailSubject',
+      key: 'emailSubject',
       ellipsis: true,
+      render: (subject: string | null) => subject || '-',
+    },
+    {
+      title: 'Nhắc trước (ngày)',
+      dataIndex: 'remindBeforeDays',
+      key: 'remindBeforeDays',
+      width: 120,
+      align: 'center',
     },
     {
       title: 'Loại',
-      dataIndex: 'notificationType',
-      key: 'notificationType',
-      width: 100,
+      dataIndex: 'type',
+      key: 'type',
+      width: 120,
       render: (type: string) => {
         const colors: Record<string, string> = {
-          EMAIL: 'blue',
-          SYSTEM: 'green',
-          SMS: 'orange',
+          UPCOMING_EXPIRY: 'orange',
+          EXPIRED: 'red',
+          CUSTOM: 'blue',
         };
-        return <Tag color={colors[type]}>{type}</Tag>;
+        const labels: Record<string, string> = {
+          UPCOMING_EXPIRY: 'Sắp hết hạn',
+          EXPIRED: 'Đã hết hạn',
+          CUSTOM: 'Tùy chỉnh',
+        };
+        return <Tag color={colors[type]}>{labels[type] || type}</Tag>;
       },
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'isRead',
-      key: 'isRead',
+      dataIndex: 'status',
+      key: 'status',
       width: 120,
-      render: (isRead: boolean) => (
-        <Tag color={isRead ? 'default' : 'red'}>
-          {isRead ? 'Đã đọc' : 'Chưa đọc'}
-        </Tag>
-      ),
+      render: (status: string) => {
+        const colors: Record<string, string> = {
+          PENDING: 'orange',
+          SENT: 'green',
+          ACKNOWLEDGED: 'blue',
+          FAILED: 'red',
+        };
+        const labels: Record<string, string> = {
+          PENDING: 'Chờ gửi',
+          SENT: 'Đã gửi',
+          ACKNOWLEDGED: 'Đã xem',
+          FAILED: 'Thất bại',
+        };
+        return <Tag color={colors[status]}>{labels[status] || status}</Tag>;
+      },
     },
     {
       title: 'Thao tác',
@@ -128,25 +115,16 @@ export default function NotificationsPage() {
       width: 150,
       render: (_, record) => (
         <Space>
-          {!record.isRead && (
+          {record.status === 'PENDING' && (
             <Button
               type="link"
               size="small"
-              icon={<CheckOutlined />}
-              onClick={() => handleMarkAsRead(record.id)}
+              icon={<ReloadOutlined />}
+              onClick={() => handleResend(record.id)}
             >
-              Đã đọc
+              Gửi lại
             </Button>
           )}
-          <Button
-            type="link"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
-          >
-            Xóa
-          </Button>
         </Space>
       ),
     },
@@ -154,16 +132,19 @@ export default function NotificationsPage() {
 
   const filteredNotifications = notifications
     .filter((notif) => {
-      if (filterStatus === 'read') return notif.isRead;
-      if (filterStatus === 'unread') return !notif.isRead;
+      if (filterStatus === 'read') return notif.status === 'SENT' || notif.status === 'ACKNOWLEDGED';
+      if (filterStatus === 'unread') return notif.status === 'PENDING';
       return true;
     })
-    .filter((notif) =>
-      notif.assetName.toLowerCase().includes(searchText.toLowerCase()) ||
-      notif.message.toLowerCase().includes(searchText.toLowerCase())
-    );
+    .filter((notif) => {
+      const assetName = notif.softwareAsset?.name || '';
+      const emailSubject = notif.emailSubject || '';
+      const searchLower = searchText.toLowerCase();
+      return assetName.toLowerCase().includes(searchLower) ||
+             emailSubject.toLowerCase().includes(searchLower);
+    });
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => n.status === 'PENDING').length;
 
   return (
     <div style={{ padding: 24 }}>
@@ -178,11 +159,9 @@ export default function NotificationsPage() {
           </Space>
         }
         extra={
-          <Space>
-            <Button type="primary" onClick={handleMarkAllAsRead} disabled={unreadCount === 0}>
-              Đánh dấu tất cả đã đọc
-            </Button>
-          </Space>
+          <Button icon={<ReloadOutlined />} onClick={fetchNotifications}>
+            Tải lại
+          </Button>
         }
       >
         <Space style={{ marginBottom: 16 }}>
@@ -215,7 +194,7 @@ export default function NotificationsPage() {
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} thông báo`,
           }}
-          rowClassName={(record) => (!record.isRead ? 'unread-notification' : '')}
+          rowClassName={(record) => (record.status === 'PENDING' ? 'unread-notification' : '')}
         />
       </Card>
 
