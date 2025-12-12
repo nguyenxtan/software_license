@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, DatePicker, InputNumber, message, Checkbox } from 'antd';
+import { Modal, Form, Input, Select, DatePicker, TimePicker, InputNumber, message, Checkbox } from 'antd';
 import dayjs from 'dayjs';
 import api from '../services/api';
 import type { SoftwareAsset } from '../types';
@@ -14,11 +14,23 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<any[]>([]);
+  const notificationFrequency = Form.useWatch('notificationFrequency', form);
 
   useEffect(() => {
     if (visible) {
       fetchDepartments();
       if (asset) {
+        // Parse cron schedule to TimePicker value
+        let customScheduleTime = null;
+        if (asset.notificationCustomSchedule) {
+          const cronParts = asset.notificationCustomSchedule.split(' ');
+          if (cronParts.length >= 2) {
+            const minute = parseInt(cronParts[0]);
+            const hour = parseInt(cronParts[1]);
+            customScheduleTime = dayjs().hour(hour).minute(minute);
+          }
+        }
+
         form.setFieldsValue({
           ...asset,
           expireDate: dayjs(asset.expireDate),
@@ -26,6 +38,8 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
           notificationChannels: asset.notificationChannels
             ? asset.notificationChannels.split(',').map((c: string) => c.trim())
             : ['EMAIL'],
+          // Convert cron to TimePicker
+          notificationCustomSchedule: customScheduleTime,
         });
       } else {
         form.resetFields();
@@ -52,6 +66,10 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
         notificationChannels: Array.isArray(values.notificationChannels)
           ? values.notificationChannels.join(',')
           : values.notificationChannels || 'EMAIL',
+        // Convert TimePicker to cron format (minute hour * * *)
+        notificationCustomSchedule: values.notificationCustomSchedule
+          ? `${values.notificationCustomSchedule.minute()} ${values.notificationCustomSchedule.hour()} * * *`
+          : undefined,
       };
 
       if (asset) {
@@ -169,6 +187,22 @@ export default function AssetFormModal({ visible, asset, onClose }: AssetFormMod
             <Select.Option value="CUSTOM">Tùy chỉnh (Cron)</Select.Option>
           </Select>
         </Form.Item>
+
+        {notificationFrequency === 'CUSTOM' && (
+          <Form.Item
+            name="notificationCustomSchedule"
+            label="Lịch gửi tùy chỉnh"
+            tooltip="Chọn giờ gửi thông báo hàng ngày"
+            initialValue="01:00"
+          >
+            <TimePicker
+              format="HH:mm"
+              style={{ width: '100%' }}
+              placeholder="Chọn giờ"
+              showNow={false}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item name="notificationStartDays" label="Bắt đầu nhắc trước (ngày)" initialValue={90}>
           <InputNumber min={1} max={365} style={{ width: '100%' }} />
